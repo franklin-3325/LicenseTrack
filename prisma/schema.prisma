@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  companyName  String?
+  createdAt    DateTime  @default(now())
+  licenses     License[]
+}
+
+model License {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseName       String
+  licenseNumber     String?
+  issuingAuthority  String?
+  state             String?
+  category          String?
+  issueDate         DateTime?
+  expirationDate    DateTime
+  notes             String?
+  last30DayReminder DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([expirationDate])
+}

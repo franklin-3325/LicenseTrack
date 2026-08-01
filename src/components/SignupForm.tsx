@@ -1,0 +1,74 @@
+"use client";
+
+import { useActionState } from "react";
+import { signup } from "@/app/actions/auth";
+
+export default function SignupForm() {
+  const [state, formAction, pending] = useActionState(signup, undefined);
+
+  return (
+    <form action={formAction} className="space-y-4">
+      {state?.error && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {state.error}
+        </p>
+      )}
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          Your name
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          required
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+        />
+      </div>
+      <div>
+        <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+          Company name <span className="text-gray-400">(optional)</span>
+        </label>
+        <input
+          id="companyName"
+          name="companyName"
+          type="text"
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+        />
+      </div>
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+        />
+      </div>
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          minLength={8}
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+        />
+        <p className="mt-1 text-xs text-gray-500">At least 8 characters.</p>
+      </div>
+      <button
+        type="submit"
+        disabled={pending}
+        className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+      >
+        {pending ? "Creating account..." : "Create account"}
+      </button>
+    </form>
+  );
+}
