@@ -1,17 +1,20 @@
 import Link from "next/link";
-import { verifySession } from "@/lib/dal";
+import { verifyOrgSession } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import type { LicenseModel } from "@/generated/prisma/models";
 import { getLicenseStatus, daysUntil } from "@/lib/licenseStatus";
 import StatusBadge from "@/components/StatusBadge";
 import DeleteLicenseButton from "@/components/DeleteLicenseButton";
 
+type LicenseWithDocCount = LicenseModel & { _count: { documents: number } };
+
 export default async function DashboardPage() {
-  const { userId } = await verifySession();
+  const { organizationId, organizationName } = await verifyOrgSession();
 
   const licenses = await prisma.license.findMany({
-    where: { userId },
+    where: { organizationId },
     orderBy: { expirationDate: "asc" },
+    include: { _count: { select: { documents: true } } },
   });
 
   const counts = { expired: 0, critical: 0, warning: 0, ok: 0 };
@@ -22,9 +25,16 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Your licenses
-        </h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {organizationName}
+          </h1>
+          <p className="text-sm text-gray-500">
+            <Link href="/team" className="underline hover:text-gray-700">
+              Manage team
+            </Link>
+          </p>
+        </div>
         <Link
           href="/licenses/new"
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
@@ -59,6 +69,7 @@ export default async function DashboardPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <Th>License</Th>
+                  <Th>Holder</Th>
                   <Th>State / Category</Th>
                   <Th>Expires</Th>
                   <Th>Status</Th>
@@ -68,7 +79,7 @@ export default async function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {licenses.map((license: LicenseModel) => {
+                {licenses.map((license: LicenseWithDocCount) => {
                   const days = daysUntil(license.expirationDate);
                   return (
                     <tr key={license.id}>
@@ -81,6 +92,9 @@ export default async function DashboardPage() {
                             #{license.licenseNumber}
                           </div>
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {license.holderName || "—"}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         {[license.state, license.category]
@@ -105,7 +119,15 @@ export default async function DashboardPage() {
                         <StatusBadge expirationDate={license.expirationDate} />
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-3">
+                        <div className="flex items-center justify-end gap-3">
+                          {license._count.documents > 0 && (
+                            <span
+                              className="text-xs text-gray-400"
+                              title={`${license._count.documents} document(s) attached`}
+                            >
+                              📎 {license._count.documents}
+                            </span>
+                          )}
                           <Link
                             href={`/licenses/${license.id}/edit`}
                             className="text-sm text-gray-600 hover:text-gray-900"

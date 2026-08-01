@@ -3,11 +3,14 @@
 import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
 
-export default function LoginForm() {
+export default function LoginForm({ inviteToken }: { inviteToken?: string }) {
   const [state, formAction, pending] = useActionState(login, undefined);
 
   return (
     <form action={formAction} className="space-y-4">
+      {inviteToken && (
+        <input type="hidden" name="inviteToken" value={inviteToken} />
+      )}
       {state?.error && (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
           {state.error}

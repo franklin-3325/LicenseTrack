@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/licenses"];
+const PROTECTED_PREFIXES = ["/dashboard", "/licenses", "/team"];
 const AUTH_ONLY_ROUTES = ["/login", "/signup"];
 const COOKIE_NAME = "licensetrack_session";
 
@@ -46,5 +46,11 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/licenses/:path*", "/login", "/signup"],
+  matcher: [
+    "/dashboard/:path*",
+    "/licenses/:path*",
+    "/team/:path*",
+    "/login",
+    "/signup",
+  ],
 };

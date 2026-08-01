@@ -1,10 +1,11 @@
 # LicenseTrack
 
-A website where individuals and companies can create an account, log in, and
-track renewal dates for every contractor license they're responsible for.
-The dashboard highlights what's expired or expiring soon, and (once you
-connect an email service) sends automatic reminder emails before a license
-lapses.
+A website where companies can create an account, invite their team, and
+track renewal dates for every contractor license they're responsible for -
+attaching the license certificate, insurance certificate, or bond to each
+one. The dashboard highlights what's expired or expiring soon, and (once
+you connect an email service) sends automatic reminder emails before a
+license lapses.
 
 This README is written for someone who has never run a web project before.
 Follow it top to bottom.
@@ -15,8 +16,8 @@ Follow it top to bottom.
 - **Prisma** - talks to the database on your behalf.
 - **PostgreSQL** - the database itself. You'll need a connection string to
   one (see step 3 below - takes about a minute to get one for free).
-- **Resend** - an optional email-sending service, only needed for reminder
-  emails.
+- **Vercel Blob** - optional file storage, for uploaded documents.
+- **Resend** - optional email-sending service, for reminder emails.
 
 You don't need to understand any of these to run the app.
 
@@ -55,21 +56,28 @@ You don't need to understand any of these to run the app.
    ```
 7. Open [http://localhost:3000](http://localhost:3000) in your browser.
    Click "Sign up free", create an account, and add a license to try it out.
+   Signing up automatically creates a team (named after your company) that
+   you're the owner of - see section 4 to invite people onto it.
 
 ## 2. How the app is organized (if you're curious)
 
 - `src/app/page.tsx` - the public landing page.
-- `src/app/signup`, `src/app/login` - account creation and sign-in.
-- `src/app/dashboard` - the logged-in view listing your licenses.
-- `src/app/licenses/new`, `src/app/licenses/[id]/edit` - the add/edit forms.
-- `src/app/actions` - the server-side logic behind those forms (create
-  account, log in, save a license, etc.).
-- `prisma/schema.prisma` - the definition of what's stored: `User` and
-  `License`.
+- `src/app/signup`, `src/app/login` - account creation and sign-in
+  (invite-aware - see `src/app/invite/[token]`).
+- `src/app/dashboard` - the logged-in view listing your team's licenses.
+- `src/app/team` - team members list and invite form.
+- `src/app/licenses/new`, `src/app/licenses/[id]/edit` - the add/edit forms
+  (the edit page also handles document uploads).
+- `src/app/actions` - the server-side logic behind those forms: `auth.ts`
+  (accounts), `licenses.ts`, `team.ts` (invites/membership), `documents.ts`
+  (uploads).
+- `prisma/schema.prisma` - the definition of what's stored: `User`,
+  `Organization` (a team), `Membership` (who's on which team, and whether
+  they're the owner), `Invitation`, `License`, and `LicenseDocument`.
 - `src/app/api/cron/send-reminders` - the job that emails people about
-  upcoming expirations (see section 4).
-- `proxy.ts` - guards `/dashboard` and `/licenses/*` so only logged-in users
-  can reach them.
+  upcoming expirations (see section 5).
+- `proxy.ts` - guards `/dashboard`, `/licenses/*`, and `/team` so only
+  logged-in users can reach them.
 
 ## 3. Putting it on the internet (deployment) - the live demo
 
@@ -86,17 +94,20 @@ directly (I tried; more on that below if you're curious).
 2. Click "Add New" -> "Project", and import this GitHub repository
    (`franklin-3325/licensetrack`), branch `claude/license-renewal-tracker-2k6uhn`
    for now, or `main` once this is merged.
-3. Before clicking Deploy, add a database: in the project's "Storage" tab
-   (or during import), add **Postgres** - Vercel provisions one for you
-   (powered by Neon) and automatically sets `DATABASE_URL` for you. No
-   separate signup needed.
+3. Before clicking Deploy, add storage: in the project's "Storage" tab (or
+   during import):
+   - Add **Postgres** (Marketplace Database Providers -> Neon) - sets
+     `DATABASE_URL` for you automatically. No separate signup needed.
+   - Add **Blob** - only needed if you want document uploads to work; sets
+     `BLOB_READ_WRITE_TOKEN` for you automatically. Skip it and the app
+     still works, uploads just show a friendly "not set up yet" message.
 4. In the project's Settings -> Environment Variables, add:
    - `SESSION_SECRET` - any random string (generate with
      `openssl rand -base64 32`).
    - `CRON_SECRET` - any random string (generate with
      `openssl rand -hex 16`) - only needed for the reminder-email job, see
-     section 4.
-   - `RESEND_API_KEY` / `EMAIL_FROM` - optional, also for section 4.
+     section 5.
+   - `RESEND_API_KEY` / `EMAIL_FROM` - optional, also for section 5.
 5. In Settings -> Build & Deployment, set the **Build Command** to:
    ```
    npx prisma migrate deploy && npx prisma generate && next build
@@ -121,7 +132,32 @@ SQLite to Postgres in the meantime: that switch was on the roadmap for
 your first real deploy anyway, so it's already done.
 </details>
 
-## 4. Turning on real reminder emails
+## 4. Team accounts and documents
+
+Every account belongs to a team (called an "organization" in the code).
+Signing up creates a new team and makes you its owner; everyone on a team
+sees and manages the same shared list of licenses - useful for a company
+where several people need visibility into what's expiring.
+
+- **Inviting people**: from `/team` (or the "Manage team" link on the
+  dashboard), the owner enters a teammate's email. That creates an invite
+  link - if `RESEND_API_KEY` is set, it's also emailed to them. They click
+  it, create an account (or log in, if they already have one), and land on
+  the shared dashboard.
+- **Roles**: for now there are two - the owner (can invite/remove people)
+  and members (can do everything else: add, edit, delete licenses and
+  documents). There's no way to leave a team or transfer ownership yet.
+- **License holder**: each license has an optional "License holder" field
+  for the person or crew it actually belongs to - separate from who has a
+  LicenseTrack login, since a license is usually issued to a specific
+  individual even when the company account manages it.
+- **Documents**: from a license's edit page, attach the license
+  certificate, insurance certificate, bond, or anything else worth keeping
+  with the record. Requires Vercel Blob storage to be connected (see
+  section 3) - without it, uploads show a clear error instead of failing
+  silently.
+
+## 5. Turning on real reminder emails
 
 Out of the box, the reminder job (`/api/cron/send-reminders`) works, but
 without an email account connected it just logs "would have emailed..."
@@ -141,11 +177,11 @@ To send real emails:
    own scheduler to call it - Claude Code can help set that up.
 
 Reminders are sent once, when a license enters its final 30 days before
-expiring.
+expiring, to everyone on the license's team.
 
-## 5. Making changes later
+## 6. Making changes later
 
 Come back to this same Claude Code session (or a new one pointed at this
 repository) and describe what you want in plain English - e.g. "let people
-upload a PDF of the license," "add a way to invite a teammate," or "change
-the reminder window to 60 days." You don't need to write any code yourself.
+upload a PDF of the license," "add multi-stage reminders," or "add a
+compliance report." You don't need to write any code yourself.

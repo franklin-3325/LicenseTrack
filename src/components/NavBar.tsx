@@ -17,6 +17,9 @@ export default async function NavBar() {
             <Link href="/dashboard" className="text-gray-600 hover:text-gray-900">
               Dashboard
             </Link>
+            <Link href="/team" className="text-gray-600 hover:text-gray-900">
+              Team
+            </Link>
             <span className="hidden text-gray-400 sm:inline">
               {user.email}
             </span>

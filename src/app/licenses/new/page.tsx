@@ -1,9 +1,9 @@
-import { verifySession } from "@/lib/dal";
+import { verifyOrgSession } from "@/lib/dal";
 import { createLicense } from "@/app/actions/licenses";
 import LicenseForm from "@/components/LicenseForm";
 
 export default async function NewLicensePage() {
-  await verifySession();
+  await verifyOrgSession();
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">

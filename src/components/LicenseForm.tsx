@@ -7,6 +7,7 @@ type LicenseDefaults = {
   licenseName?: string;
   licenseNumber?: string | null;
   issuingAuthority?: string | null;
+  holderName?: string | null;
   state?: string | null;
   category?: string | null;
   issueDate?: string | null;
@@ -82,6 +83,20 @@ export default function LicenseForm({
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="holderName" className="block text-sm font-medium text-gray-700">
+          License holder <span className="text-gray-400">(optional)</span>
+        </label>
+        <input
+          id="holderName"
+          name="holderName"
+          type="text"
+          placeholder="e.g. the person or crew this license belongs to"
+          defaultValue={defaultValues?.holderName ?? ""}
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

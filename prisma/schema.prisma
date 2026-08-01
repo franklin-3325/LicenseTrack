@@ -10,32 +10,89 @@ datasource db {
   provider = "postgresql"
 }
 
+enum MembershipRole {
+  OWNER
+  MEMBER
+}
+
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String       @id @default(cuid())
+  email        String       @unique
   passwordHash String
   name         String?
   companyName  String?
-  createdAt    DateTime  @default(now())
-  licenses     License[]
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+  invitations  Invitation[] @relation("InvitedBy")
+}
+
+model Organization {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  licenses    License[]
+  invitations Invitation[]
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           MembershipRole @default(MEMBER)
+  createdAt      DateTime       @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  token          String       @unique @default(cuid())
+  invitedById    String
+  invitedBy      User         @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  acceptedAt     DateTime?
+
+  @@index([organizationId])
 }
 
 model License {
-  id                String    @id @default(cuid())
-  userId            String
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String             @id @default(cuid())
+  organizationId    String
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   licenseName       String
   licenseNumber     String?
   issuingAuthority  String?
+  holderName        String?
   state             String?
   category          String?
   issueDate         DateTime?
   expirationDate    DateTime
   notes             String?
   last30DayReminder DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  documents         LicenseDocument[]
 
-  @@index([userId])
+  @@index([organizationId])
   @@index([expirationDate])
+}
+
+model LicenseDocument {
+  id          String   @id @default(cuid())
+  licenseId   String
+  license     License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  fileName    String
+  url         String
+  contentType String?
+  size        Int?
+  uploadedAt  DateTime @default(now())
+
+  @@index([licenseId])
 }

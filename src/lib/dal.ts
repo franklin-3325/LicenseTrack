@@ -21,3 +21,26 @@ export const getCurrentUser = cache(async () => {
     select: { id: true, email: true, name: true, companyName: true },
   });
 });
+
+// Every user belongs to exactly one organization (their own, or one they
+// were invited into) - there's no org-switcher, so this is the org whose
+// licenses and team they see.
+export const verifyOrgSession = cache(async () => {
+  const { userId } = await verifySession();
+
+  const membership = await prisma.membership.findFirst({
+    where: { userId },
+    include: { organization: { select: { id: true, name: true } } },
+  });
+
+  if (!membership) {
+    redirect("/login");
+  }
+
+  return {
+    userId,
+    organizationId: membership.organizationId,
+    organizationName: membership.organization.name,
+    role: membership.role,
+  };
+});

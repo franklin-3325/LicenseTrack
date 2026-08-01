@@ -21,18 +21,24 @@ export async function GET(request: NextRequest) {
       expirationDate: { lte: in30Days },
       last30DayReminder: null,
     },
-    include: { user: { select: { email: true } } },
+    include: {
+      organization: {
+        include: { memberships: { include: { user: { select: { email: true } } } } },
+      },
+    },
   });
 
   let sent = 0;
   for (const license of dueLicenses) {
     const daysLeft = daysUntil(license.expirationDate);
-    await sendRenewalReminderEmail({
-      to: license.user.email,
-      licenseName: license.licenseName,
-      expirationDate: license.expirationDate,
-      daysLeft,
-    });
+    for (const membership of license.organization.memberships) {
+      await sendRenewalReminderEmail({
+        to: membership.user.email,
+        licenseName: license.licenseName,
+        expirationDate: license.expirationDate,
+        daysLeft,
+      });
+    }
     await prisma.license.update({
       where: { id: license.id },
       data: { last30DayReminder: new Date() },
