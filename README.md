@@ -39,7 +39,10 @@ You don't need to understand any of these to run the app.
    cp .env.example .env
    ```
    Open `.env` in any text editor:
-   - Set `DATABASE_URL` to the connection string from step 3.
+   - Set `DATABASE_URL` to the connection string from step 3. If your
+     provider gave you both a "pooled" and a "direct"/"unpooled" one, also
+     set `DIRECT_URL` to the direct one (see the note in section 3 about
+     why - migrations need it).
    - Set `SESSION_SECRET` to a random string - generate one with:
      ```bash
      openssl rand -base64 32
@@ -102,6 +105,13 @@ directly (I tried; more on that below if you're curious).
      `BLOB_READ_WRITE_TOKEN` for you automatically. Skip it and the app
      still works, uploads just show a friendly "not set up yet" message.
 4. In the project's Settings -> Environment Variables, add:
+   - `DIRECT_URL` - **important**: the database Vercel just created for you
+     gives you a *pooled* connection string as `DATABASE_URL`. Migrations
+     need the *unpooled/direct* one instead, or they can fail halfway and
+     leave the database in a half-migrated state. Find it in your Postgres
+     provider's dashboard (Neon: the ".env.local" tab shows both
+     `DATABASE_URL` and `DATABASE_URL_UNPOOLED` - copy the unpooled one in
+     here as `DIRECT_URL`).
    - `SESSION_SECRET` - any random string (generate with
      `openssl rand -base64 32`).
    - `CRON_SECRET` - any random string (generate with
@@ -115,6 +125,33 @@ directly (I tried; more on that below if you're curious).
    This creates the database tables automatically on every deploy.
 6. Deploy. Vercel gives you a `https://your-app.vercel.app` URL - that's
    your live demo.
+
+<details>
+<summary>If a deploy fails with a Prisma migration error (click to expand)</summary>
+
+If the build log shows `Error: P3009` ("failed migrations in the target
+database") or `Error: P3018` ("A migration failed to apply") with a
+Postgres error code like `42710` ("already exists"), it means a migration
+was run through a *pooled* connection and partially applied before Prisma
+reported it failed - see the `DIRECT_URL` note above; this is what it
+protects against. To recover from it once it's happened:
+
+1. Open your database provider's SQL editor (Neon: left sidebar -> "SQL
+   Editor" / "Query").
+2. Find the name of the migration that's stuck - it's in the build log,
+   e.g. `20260801151731_teams_and_documents`.
+3. Run:
+   ```sql
+   DELETE FROM "_prisma_migrations" WHERE migration_name = 'PASTE_THE_NAME_HERE';
+   ```
+   If the retry then fails again with a "duplicate_object"/"already
+   exists" error on some specific type or table, that object partially
+   got created - also drop it (e.g. `DROP TYPE IF EXISTS "SomeType";`) so
+   the migration can create it cleanly on the next attempt.
+4. Make sure `DIRECT_URL` is set (see above) before redeploying, so this
+   can't happen again.
+
+</details>
 
 <details>
 <summary>Why I couldn't just hand you a live URL directly (click to expand)</summary>

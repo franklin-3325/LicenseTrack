@@ -9,6 +9,13 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrations need a direct (non-pooled) connection - running them through
+    // a connection pooler (Neon/Supabase/etc.) can let individual statements
+    // commit even when Prisma reports the migration as a whole failed,
+    // leaving the database in a half-migrated state. DIRECT_URL is optional:
+    // set it to your provider's "unpooled"/"direct" connection string when
+    // DATABASE_URL points at a pooler; otherwise this just falls back to
+    // DATABASE_URL (e.g. plain local Postgres has no pooler distinction).
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
