@@ -64,7 +64,12 @@ You don't need to understand any of these to run the app.
 
 ## 2. How the app is organized (if you're curious)
 
-- `src/app/page.tsx` - the public landing page.
+- `src/app/page.tsx` - the public landing page. It pitches the done-for-you
+  service (not the self-serve tracker) and captures leads through
+  `src/components/LeadForm.tsx` - submissions are saved to the `Lead` table
+  and optionally emailed to `LEAD_NOTIFICATION_EMAIL` (see `.env.example`).
+  The self-serve tracker below is still there as a secondary "try it
+  yourself, free" path from the homepage.
 - `src/app/signup`, `src/app/login` - account creation and sign-in
   (invite-aware - see `src/app/invite/[token]`).
 - `src/app/dashboard` - the logged-in view listing your team's licenses.
@@ -73,10 +78,11 @@ You don't need to understand any of these to run the app.
   (the edit page also handles document uploads).
 - `src/app/actions` - the server-side logic behind those forms: `auth.ts`
   (accounts), `licenses.ts`, `team.ts` (invites/membership), `documents.ts`
-  (uploads).
+  (uploads), `leads.ts` (homepage inquiry form).
 - `prisma/schema.prisma` - the definition of what's stored: `User`,
   `Organization` (a team), `Membership` (who's on which team, and whether
-  they're the owner), `Invitation`, `License`, and `LicenseDocument`.
+  they're the owner), `Invitation`, `License`, `LicenseDocument`, and
+  `Lead` (homepage inquiries - separate from app accounts).
 - `src/app/api/cron/send-reminders` - the job that emails people about
   upcoming expirations (see section 5).
 - `proxy.ts` - guards `/dashboard`, `/licenses/*`, and `/team` so only

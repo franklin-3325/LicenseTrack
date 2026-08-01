@@ -96,3 +96,17 @@ model LicenseDocument {
 
   @@index([licenseId])
 }
+
+// Inquiries from the homepage "get a compliance review" form - these are
+// sales leads for the done-for-you service, not app accounts.
+model Lead {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  companyName   String
+  employeeCount String?
+  states        String?
+  trades        String?
+  message       String?
+  createdAt     DateTime @default(now())
+}

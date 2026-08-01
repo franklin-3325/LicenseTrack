@@ -52,6 +52,50 @@ export async function sendRenewalReminderEmail({
   return { sent: true as const };
 }
 
+type LeadNotification = {
+  name: string;
+  email: string;
+  companyName: string;
+  employeeCount: string | null;
+  states: string | null;
+  trades: string | null;
+  message: string | null;
+};
+
+export async function sendLeadNotificationEmail(lead: LeadNotification) {
+  const notifyTo = process.env.LEAD_NOTIFICATION_EMAIL;
+  const subject = `New compliance review request: ${lead.companyName}`;
+  const body = [
+    `Name: ${lead.name}`,
+    `Email: ${lead.email}`,
+    `Company: ${lead.companyName}`,
+    lead.employeeCount && `Employees: ${lead.employeeCount}`,
+    lead.states && `States: ${lead.states}`,
+    lead.trades && `Trades: ${lead.trades}`,
+    lead.message && `Message: ${lead.message}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const resend = getResendClient();
+  if (!resend || !notifyTo) {
+    console.log(
+      `[mailer] Lead notification not sent (missing RESEND_API_KEY or LEAD_NOTIFICATION_EMAIL).\n${subject}\n${body}`
+    );
+    return { sent: false, reason: "not-configured" as const };
+  }
+
+  await resend.emails.send({
+    from: FROM,
+    to: notifyTo,
+    replyTo: lead.email,
+    subject,
+    html: `<pre style="font-family: inherit; white-space: pre-wrap;">${body}</pre>`,
+  });
+
+  return { sent: true as const };
+}
+
 type TeamInviteEmail = {
   to: string;
   organizationName: string;
