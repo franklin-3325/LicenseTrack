@@ -13,8 +13,8 @@ Follow it top to bottom.
 
 - **Next.js** - the web framework (handles pages, forms, and the server).
 - **Prisma** - talks to the database on your behalf.
-- **SQLite** - the database itself, for local development. It's just a file
-  (`prisma/dev.db`) - nothing to install or configure.
+- **PostgreSQL** - the database itself. You'll need a connection string to
+  one (see step 3 below - takes about a minute to get one for free).
 - **Resend** - an optional email-sending service, only needed for reminder
   emails.
 
@@ -28,28 +28,32 @@ You don't need to understand any of these to run the app.
    ```bash
    npm install
    ```
-3. Copy the example environment file and fill in one value:
+3. Get a free Postgres database - the app needs somewhere to store
+   accounts and licenses. Easiest options, no credit card:
+   - [neon.com](https://neon.com) - sign up, create a project, copy the
+     connection string it gives you.
+   - [prisma.io/postgres](https://www.prisma.io/postgres) - same idea.
+4. Copy the example environment file and fill in two values:
    ```bash
    cp .env.example .env
    ```
-   Open `.env` in any text editor and set `SESSION_SECRET` to a random
-   string - you can generate one by running:
+   Open `.env` in any text editor:
+   - Set `DATABASE_URL` to the connection string from step 3.
+   - Set `SESSION_SECRET` to a random string - generate one with:
+     ```bash
+     openssl rand -base64 32
+     ```
+     This keeps login sessions secure; it can be anything random, you'll
+     never need to remember it.
+5. Create the database tables:
    ```bash
-   openssl rand -base64 32
+   npx prisma migrate deploy
    ```
-   Paste the result in as `SESSION_SECRET="..."`. This is what keeps login
-   sessions secure; it can be anything random, you'll never need to
-   remember it.
-4. Create the local database:
-   ```bash
-   npx prisma migrate dev
-   ```
-   This creates `prisma/dev.db` and sets up the tables (`User`, `License`).
-5. Start the app:
+6. Start the app:
    ```bash
    npm run dev
    ```
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
    Click "Sign up free", create an account, and add a license to try it out.
 
 ## 2. How the app is organized (if you're curious)
@@ -67,35 +71,55 @@ You don't need to understand any of these to run the app.
 - `proxy.ts` - guards `/dashboard` and `/licenses/*` so only logged-in users
   can reach them.
 
-## 3. Putting it on the internet (deployment)
+## 3. Putting it on the internet (deployment) - the live demo
 
-Right now the app only runs on your own computer. To give it a real web
-address that anyone can visit, you deploy it - most simply to
+Right now the app only runs on your own computer. To get a real web address
+you (or anyone) can visit and click around on, deploy it - most simply to
 [Vercel](https://vercel.com) (made by the creators of Next.js, free to
-start):
+start). This has to happen from your own browser - I can't do this step
+from inside this session, since this sandboxed environment's network
+settings don't allow reaching Vercel, Prisma's hosting, or similar sites
+directly (I tried; more on that below if you're curious).
 
-1. Push this repository to GitHub (if it isn't already).
-2. Create a Vercel account and "Import" this GitHub repository.
-3. **Important:** SQLite (the local file database) does not work on Vercel,
-   because Vercel doesn't keep files around between requests. Before your
-   first real deploy, switch to a hosted database:
-   - Create a free Postgres database at [neon.com](https://neon.com) or
-     [prisma.io](https://www.prisma.io/postgres) (a couple of clicks, no
-     credit card).
-   - In `prisma/schema.prisma`, change `provider = "sqlite"` to
-     `provider = "postgresql"`.
-   - In `src/lib/prisma.ts`, swap the SQLite adapter for the Postgres one
-     (`@prisma/adapter-pg`, package: `npm install @prisma/adapter-pg pg`).
-     This is a good task to hand back to Claude Code / this assistant when
-     you're ready - just say "switch the database to Postgres."
-   - Set `DATABASE_URL` in Vercel's project settings to the connection
-     string the Postgres provider gives you.
-   - Run `npx prisma migrate deploy` once against that database (Claude
-     Code can do this for you) to create the tables.
-4. In Vercel's project settings, add these environment variables (same
-   names as in `.env`): `DATABASE_URL`, `SESSION_SECRET`, `RESEND_API_KEY`,
-   `EMAIL_FROM`, `CRON_SECRET`.
-5. Deploy. Vercel gives you a `https://your-app.vercel.app` URL.
+1. Go to [vercel.com](https://vercel.com) and sign up (GitHub login is
+   fastest).
+2. Click "Add New" -> "Project", and import this GitHub repository
+   (`franklin-3325/licensetrack`), branch `claude/license-renewal-tracker-2k6uhn`
+   for now, or `main` once this is merged.
+3. Before clicking Deploy, add a database: in the project's "Storage" tab
+   (or during import), add **Postgres** - Vercel provisions one for you
+   (powered by Neon) and automatically sets `DATABASE_URL` for you. No
+   separate signup needed.
+4. In the project's Settings -> Environment Variables, add:
+   - `SESSION_SECRET` - any random string (generate with
+     `openssl rand -base64 32`).
+   - `CRON_SECRET` - any random string (generate with
+     `openssl rand -hex 16`) - only needed for the reminder-email job, see
+     section 4.
+   - `RESEND_API_KEY` / `EMAIL_FROM` - optional, also for section 4.
+5. In Settings -> Build & Deployment, set the **Build Command** to:
+   ```
+   npx prisma migrate deploy && npx prisma generate && next build
+   ```
+   This creates the database tables automatically on every deploy.
+6. Deploy. Vercel gives you a `https://your-app.vercel.app` URL - that's
+   your live demo.
+
+<details>
+<summary>Why I couldn't just hand you a live URL directly (click to expand)</summary>
+
+I tried two ways to get you a working link without you needing to do
+anything: a temporary public tunnel to the app running in this sandbox,
+and deploying it via Prisma's own hosting platform (Prisma Compute) using
+their CLI. Both were blocked by this environment's outbound network
+policy - it only allows a short allowlist of hosts (npm, GitHub, etc.),
+not general internet access, so neither request could get out. That's a
+setting on this Claude Code environment, not a limitation of the app
+itself - the app is fully deploy-ready, which is why the Vercel steps
+above should just work. This is also why I switched the project from
+SQLite to Postgres in the meantime: that switch was on the roadmap for
+your first real deploy anyway, so it's already done.
+</details>
 
 ## 4. Turning on real reminder emails
 
