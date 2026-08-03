@@ -10,6 +10,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-oswald);
+
+  /* Brand palette, matched to licensingconnection.com: deep navy hero,
+     steel-blue for primary actions, the logo's green as a sparing accent. */
+  --color-navy: #0e2540;
+  --color-navy-light: #17395c;
+  --color-steel: #2d6fa3;
+  --color-steel-dark: #21567f;
+  --color-brand-green: #6fa83b;
+  --color-offwhite: #f5f8fb;
+  --color-charcoal: #475364;
 }
 
 @media (prefers-color-scheme: dark) {

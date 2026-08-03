@@ -3,14 +3,22 @@
 import { useActionState } from "react";
 import { submitLead } from "@/app/actions/leads";
 
-export default function LeadForm() {
+const inputClass =
+  "mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-steel focus:outline-none focus:ring-1 focus:ring-steel";
+const labelClass = "block text-sm font-medium text-gray-700";
+
+export default function LeadForm({
+  defaultInterest,
+}: {
+  defaultInterest?: string;
+}) {
   const [state, formAction, pending] = useActionState(submitLead, undefined);
 
   if (state?.success) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-        <p className="font-medium text-green-900">Got it - thank you.</p>
-        <p className="mt-1 text-sm text-green-800">
+      <div className="rounded-lg border border-brand-green/30 bg-brand-green/10 p-6 text-center">
+        <p className="font-medium text-navy">Got it - thank you.</p>
+        <p className="mt-1 text-sm text-slate">
           We&apos;ll reach out shortly to walk through what we found and how
           we can help.
         </p>
@@ -27,54 +35,57 @@ export default function LeadForm() {
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="lead-name" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="lead-name" className={labelClass}>
             Your name
           </label>
-          <input
-            id="lead-name"
-            name="name"
-            type="text"
-            required
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
-          />
+          <input id="lead-name" name="name" type="text" required className={inputClass} />
         </div>
         <div>
-          <label htmlFor="lead-email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="lead-email" className={labelClass}>
             Email
           </label>
-          <input
-            id="lead-email"
-            name="email"
-            type="email"
-            required
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
-          />
+          <input id="lead-email" name="email" type="email" required className={inputClass} />
         </div>
       </div>
 
       <div>
-        <label htmlFor="lead-company" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="lead-company" className={labelClass}>
           Company name
         </label>
-        <input
-          id="lead-company"
-          name="companyName"
-          type="text"
-          required
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
-        />
+        <input id="lead-company" name="companyName" type="text" required className={inputClass} />
+      </div>
+
+      <div>
+        <label htmlFor="lead-interest" className={labelClass}>
+          What are you interested in?
+        </label>
+        <select
+          id="lead-interest"
+          name="interest"
+          defaultValue={defaultInterest ?? ""}
+          className={`${inputClass} bg-white`}
+        >
+          <option value="">Not sure yet</option>
+          <option value="License management">
+            License, bond, insurance &amp; CE management
+          </option>
+          <option value="Workforce licensing">
+            Workforce licensing - get more of my crew licensed
+          </option>
+          <option value="Both">Both</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="lead-employees" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="lead-employees" className={labelClass}>
             How many licensed people? <span className="text-gray-400">(optional)</span>
           </label>
           <select
             id="lead-employees"
             name="employeeCount"
             defaultValue=""
-            className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className={`${inputClass} bg-white`}
           >
             <option value="">Select one</option>
             <option value="1">Just me</option>
@@ -85,7 +96,7 @@ export default function LeadForm() {
           </select>
         </div>
         <div>
-          <label htmlFor="lead-states" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="lead-states" className={labelClass}>
             States you&apos;re licensed in <span className="text-gray-400">(optional)</span>
           </label>
           <input
@@ -93,13 +104,13 @@ export default function LeadForm() {
             name="states"
             type="text"
             placeholder="e.g. CA, NV, AZ"
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className={inputClass}
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="lead-trades" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="lead-trades" className={labelClass}>
           Trade(s) <span className="text-gray-400">(optional)</span>
         </label>
         <input
@@ -107,12 +118,12 @@ export default function LeadForm() {
           name="trades"
           type="text"
           placeholder="e.g. Electrical, HVAC, General Contractor"
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+          className={inputClass}
         />
       </div>
 
       <div>
-        <label htmlFor="lead-message" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="lead-message" className={labelClass}>
           Anything specific going on? <span className="text-gray-400">(optional)</span>
         </label>
         <textarea
@@ -120,16 +131,16 @@ export default function LeadForm() {
           name="message"
           rows={3}
           placeholder="e.g. a renewal or CE deadline we're worried about, a qualifier issue, a bid coming up"
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+          className={inputClass}
         />
       </div>
 
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-gray-900 px-4 py-3 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+        className="w-full rounded-md bg-steel px-4 py-3 text-sm font-medium text-white hover:bg-steel-dark disabled:opacity-50"
       >
-        {pending ? "Sending..." : "Get my free compliance review"}
+        {pending ? "Sending..." : "Get my free snapshot"}
       </button>
       <p className="text-center text-xs text-gray-500">
         No cost, no obligation. We&apos;ll tell you exactly where you stand.

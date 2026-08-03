@@ -8,7 +8,7 @@ export default async function NavBar() {
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-        <Link href="/" className="text-lg font-semibold text-gray-900">
+        <Link href="/" className="font-display text-lg font-semibold tracking-wide text-navy">
           LicenseTrack
         </Link>
 
@@ -39,7 +39,7 @@ export default async function NavBar() {
             </Link>
             <Link
               href="/signup"
-              className="rounded-md bg-gray-900 px-3 py-1.5 text-white hover:bg-gray-700"
+              className="rounded-md bg-steel px-3 py-1.5 text-white hover:bg-steel-dark"
             >
               Sign up free
             </Link>

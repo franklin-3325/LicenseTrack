@@ -56,6 +56,7 @@ type LeadNotification = {
   name: string;
   email: string;
   companyName: string;
+  interest: string | null;
   employeeCount: string | null;
   states: string | null;
   trades: string | null;
@@ -64,11 +65,12 @@ type LeadNotification = {
 
 export async function sendLeadNotificationEmail(lead: LeadNotification) {
   const notifyTo = process.env.LEAD_NOTIFICATION_EMAIL;
-  const subject = `New compliance review request: ${lead.companyName}`;
+  const subject = `New lead: ${lead.companyName}`;
   const body = [
     `Name: ${lead.name}`,
     `Email: ${lead.email}`,
     `Company: ${lead.companyName}`,
+    lead.interest && `Interested in: ${lead.interest}`,
     lead.employeeCount && `Employees: ${lead.employeeCount}`,
     lead.states && `States: ${lead.states}`,
     lead.trades && `Trades: ${lead.trades}`,

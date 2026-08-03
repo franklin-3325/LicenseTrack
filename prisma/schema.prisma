@@ -104,6 +104,7 @@ model Lead {
   name          String
   email         String
   companyName   String
+  interest      String?
   employeeCount String?
   states        String?
   trades        String?
